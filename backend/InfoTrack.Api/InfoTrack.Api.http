@@ -1,0 +1,19 @@
+@InfoTrack.Api_HostAddress = http://localhost:5080
+
+GET {{InfoTrack.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{InfoTrack.Api_HostAddress}}/api/locations/defaults
+Accept: application/json
+
+###
+
+POST {{InfoTrack.Api_HostAddress}}/api/search-runs
+Content-Type: application/json
+
+{
+  "locations": ["London", "Birmingham"],
+  "compareWithPreviousRun": true
+}
