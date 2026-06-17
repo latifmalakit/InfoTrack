@@ -1,0 +1,11 @@
+.git
+.DS_Store
+.vscode
+.idea
+tmp
+**/bin
+**/obj
+**/node_modules
+**/dist
+TestResults
+coverage
