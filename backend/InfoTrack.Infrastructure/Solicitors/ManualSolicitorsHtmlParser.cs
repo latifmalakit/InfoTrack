@@ -200,7 +200,7 @@ public sealed partial class ManualSolicitorsHtmlParser(SolicitorsClientOptions o
     [GeneratedRegex("star-half\\s+rating", RegexOptions.IgnoreCase)]
     private static partial Regex HalfStarRegex();
 
-    [GeneratedRegex("\\((?<count>\\d+)\\)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("<span\\s+class=\"[^\"]*\\brev-results\\b[^\"]*\"[^>]*>.*?\\((?<count>\\d+)\\).*?</span>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
     private static partial Regex ReviewCountRegex();
 
     [GeneratedRegex("<.*?>", RegexOptions.Singleline)]

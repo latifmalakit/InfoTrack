@@ -56,4 +56,24 @@ public sealed class ManualSolicitorsHtmlParserTests
         Assert.Equal(90, small.Rating.ReviewCount);
         Assert.False(small.IsFeatured);
     }
+
+    [Fact]
+    public void Parse_does_not_treat_phone_area_code_as_review_count()
+    {
+        const string html = """
+        <div class="result-item">
+          <span class="h2">Phone First Solicitors</span>
+          <a class="tel" rel="noindex" href="tel:02079404000">(020) 7940 4000</a>
+          <a href="/phone-first-solicitors.html" class="link-map"><i></i><address>London, SE1 2QN</address></a>
+          <p>Residential conveyancing specialists.</p>
+        </div>
+        """;
+
+        var parser = new ManualSolicitorsHtmlParser(new SolicitorsClientOptions());
+
+        var listing = Assert.Single(parser.Parse(html, "London"));
+
+        Assert.Equal("(020) 7940 4000", listing.ContactDetails.PhoneNumber);
+        Assert.Null(listing.Rating.ReviewCount);
+    }
 }
