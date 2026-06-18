@@ -6,6 +6,7 @@ namespace InfoTrack.Api.Configuration;
 public sealed record InfoTrackOptions(
     ClientCorsOptions Cors,
     ApiRateLimitingOptions RateLimiting,
+    ForwardedProxyOptions ForwardedProxy,
     SolicitorsClientOptions SolicitorsClient,
     SearchRunStorageOptions SearchRunStorage);
 
@@ -23,6 +24,11 @@ public static class ConfigurationExtensions
                 configuration,
                 ApiRateLimitingOptions.SectionName,
                 static () => new ApiRateLimitingOptions(),
+                static options => options.Validate()),
+            GetValidatedOptions(
+                configuration,
+                ForwardedProxyOptions.SectionName,
+                static () => new ForwardedProxyOptions(),
                 static options => options.Validate()),
             GetValidatedOptions(
                 configuration,
