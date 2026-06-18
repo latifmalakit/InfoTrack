@@ -15,6 +15,7 @@ public sealed class SolicitorsHttpClient(
 {
     private const string ConveyancingAreaId = "192";
     private readonly int _maxResponseBytes = options.MaxResponseBytes;
+    private readonly TimeSpan _responseReadTimeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
 
     public async Task<SolicitorSearchOutcome> SearchAsync(string location, CancellationToken cancellationToken)
     {
@@ -29,7 +30,15 @@ public sealed class SolicitorsHttpClient(
 
         try
         {
-            using var response = await httpClient.PostAsync("/prepare-search.asp", content, cancellationToken);
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/prepare-search.asp")
+            {
+                Content = content
+            };
+            using var response = await httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+
             if (!response.IsSuccessStatusCode)
             {
                 return CreateHttpStatusFailure(location, response, stopwatch.ElapsedMilliseconds);
@@ -64,7 +73,7 @@ public sealed class SolicitorsHttpClient(
                 "The search provider could not be reached. Try again later.",
                 SolicitorSearchUpstreamFailureReason.Network);
         }
-        catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(
                 exception,
@@ -108,14 +117,17 @@ public sealed class SolicitorsHttpClient(
             throw new SolicitorsResponseTooLargeException();
         }
 
-        await using var stream = await content.ReadAsStreamAsync(cancellationToken);
+        using var readCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        readCancellation.CancelAfter(_responseReadTimeout);
+
+        await using var stream = await content.ReadAsStreamAsync(readCancellation.Token);
         using var buffer = new MemoryStream(Math.Min(_maxResponseBytes, 81920));
         var chunk = new byte[81920];
         var totalBytesRead = 0;
 
         while (true)
         {
-            var bytesRead = await stream.ReadAsync(chunk.AsMemory(0, chunk.Length), cancellationToken);
+            var bytesRead = await stream.ReadAsync(chunk.AsMemory(0, chunk.Length), readCancellation.Token);
             if (bytesRead == 0)
             {
                 break;

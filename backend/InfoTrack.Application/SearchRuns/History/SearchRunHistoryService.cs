@@ -27,7 +27,7 @@ public sealed class SearchRunHistoryService(
             return null;
         }
 
-        var previousRun = await repository.GetLatestCompletedBeforeAsync(run.StartedAtUtc, cancellationToken);
+        var previousRun = await repository.GetLatestCompletedBeforeAsync(run.CompletedAtUtc, cancellationToken);
         return reportBuilder.Build(run, previousRun);
     }
 

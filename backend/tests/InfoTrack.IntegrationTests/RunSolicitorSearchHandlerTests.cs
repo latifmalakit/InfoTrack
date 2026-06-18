@@ -2,6 +2,7 @@ using InfoTrack.Application.Abstractions;
 using InfoTrack.Application.LocationSearch;
 using InfoTrack.Application.SearchRuns;
 using InfoTrack.Application.SearchRuns.Reports;
+using InfoTrack.Domain.SearchRuns;
 using InfoTrack.Domain.Solicitors;
 using InfoTrack.Infrastructure.Persistence;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -78,6 +79,19 @@ public sealed class RunSolicitorSearchHandlerTests
         Assert.Contains(second.NewListings, listing => listing.ExternalKey == "new-london");
     }
 
+    [Fact]
+    public async Task HandleAsync_compares_against_run_completed_while_current_search_was_in_progress()
+    {
+        var repository = CreateRepository();
+        var client = new InterleavingSolicitorSearchClient(repository);
+        var handler = CreateHandler(client, repository);
+
+        var report = await handler.HandleAsync(new RunSolicitorSearchRequest(["London"], true), CancellationToken.None);
+
+        Assert.Equal(1, report.Summary.TotalListings);
+        Assert.Equal(0, report.Summary.NewListings);
+    }
+
     private static SolicitorListing CreateListing(string key, string name, string location)
     {
         return SolicitorListing.Create(
@@ -143,6 +157,28 @@ public sealed class RunSolicitorSearchHandlerTests
         public Task<SolicitorSearchOutcome> SearchAsync(string location, CancellationToken cancellationToken)
         {
             throw new InvalidOperationException("Parser bug should not be reported as a location failure.");
+        }
+    }
+
+    private sealed class InterleavingSolicitorSearchClient(InMemorySearchRunRepository repository) : ISolicitorSearchClient
+    {
+        public async Task<SolicitorSearchOutcome> SearchAsync(string location, CancellationToken cancellationToken)
+        {
+            var listing = CreateListing($"{location.ToLowerInvariant()}-key", $"{location} Legal", location);
+            var completedAt = DateTimeOffset.UtcNow;
+
+            await repository.SaveAsync(
+                new SearchRun(
+                    Guid.NewGuid(),
+                    completedAt.AddSeconds(-1),
+                    completedAt,
+                    [location],
+                    [listing],
+                    []),
+                cancellationToken);
+
+            return SolicitorSearchOutcome.Succeeded(
+                new LocationSearchResult(location, "https://example.com", [listing]));
         }
     }
 }

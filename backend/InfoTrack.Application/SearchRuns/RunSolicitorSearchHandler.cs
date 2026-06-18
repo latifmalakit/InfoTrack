@@ -39,16 +39,16 @@ public sealed class RunSolicitorSearchHandler(
             locations.Count,
             request.CompareWithPreviousRun);
 
+        var searchBatch = await searchOrchestrator.SearchAsync(locations, cancellationToken);
+        var completedAt = DateTimeOffset.UtcNow;
         var previousRun = request.CompareWithPreviousRun
-            ? await repository.GetLatestCompletedBeforeAsync(startedAt, cancellationToken)
+            ? await repository.GetLatestCompletedBeforeAsync(completedAt, cancellationToken)
             : null;
 
         logger.LogDebug(
             "Previous completed run lookup finished. PreviousRunFound={PreviousRunFound}",
             previousRun is not null);
 
-        var searchBatch = await searchOrchestrator.SearchAsync(locations, cancellationToken);
-        var completedAt = DateTimeOffset.UtcNow;
         var run = new SearchRun(
             Guid.NewGuid(),
             startedAt,
