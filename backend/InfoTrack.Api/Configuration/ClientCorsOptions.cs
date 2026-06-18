@@ -20,10 +20,12 @@ public sealed class ClientCorsOptions
         foreach (var origin in ClientOrigins)
         {
             if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) ||
+                !string.IsNullOrEmpty(uri.UserInfo) ||
+                !string.Equals(origin, uri.GetLeftPart(UriPartial.Authority), StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    $"{SectionName}:{nameof(ClientOrigins)} contains invalid origin '{origin}'.");
+                    $"{SectionName}:{nameof(ClientOrigins)} contains invalid origin '{origin}'. Use only scheme, host, and optional port.");
             }
         }
     }

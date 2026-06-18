@@ -6,6 +6,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
+      ForwardedProxy__Enabled: "true"
+      ForwardedProxy__KnownNetworks__0: 172.16.0.0/12
     ports:
       - "5080:8080"
 

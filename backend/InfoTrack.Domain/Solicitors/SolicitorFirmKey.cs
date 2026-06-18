@@ -23,8 +23,8 @@ public static class SolicitorFirmKey
 
     private static string Normalize(string value)
     {
-        return string.Join(' ', value.Trim().ToLowerInvariant().Split(
-            ' ',
+        return string.Join(' ', value.Replace('\u00a0', ' ').Trim().ToLowerInvariant().Split(
+            (char[]?)null,
             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
 }

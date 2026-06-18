@@ -23,6 +23,8 @@ public sealed class InMemorySearchRunRepository : ISearchRunRepository
 
     public Task SaveAsync(SearchRun run, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         int storedRunCount;
         int removedRunCount;
 
@@ -51,6 +53,8 @@ public sealed class InMemorySearchRunRepository : ISearchRunRepository
 
     public Task<SearchRun?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         SearchRun? run;
         lock (_syncRoot)
         {
@@ -62,6 +66,8 @@ public sealed class InMemorySearchRunRepository : ISearchRunRepository
 
     public Task<SearchRun?> GetLatestCompletedBeforeAsync(DateTimeOffset timestamp, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         SearchRun? run;
         lock (_syncRoot)
         {
@@ -76,6 +82,8 @@ public sealed class InMemorySearchRunRepository : ISearchRunRepository
 
     public Task<IReadOnlyList<SearchRun>> GetRecentAsync(int count, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         IReadOnlyList<SearchRun> runs;
         lock (_syncRoot)
         {

@@ -7,9 +7,9 @@ public sealed class ForwardedProxyOptions
 {
     public const string SectionName = "ForwardedProxy";
 
-    public bool Enabled { get; init; } = true;
+    public bool Enabled { get; init; }
 
-    public string[] KnownNetworks { get; init; } = ["172.16.0.0/12"];
+    public string[] KnownNetworks { get; init; } = [];
 
     public string[] KnownProxies { get; init; } = [];
 

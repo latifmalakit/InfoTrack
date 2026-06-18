@@ -1,4 +1,5 @@
 using InfoTrack.Domain.Solicitors;
+using InfoTrack.Domain.SearchRuns;
 
 namespace InfoTrack.UnitTests;
 
@@ -54,6 +55,7 @@ public sealed class SolicitorDomainConstructionTests
         Assert.Equal("London", listing.Location);
         Assert.Null(listing.Description);
         Assert.Equal(["Lexcel", "CQS"], listing.QualityMarks);
+        Assert.Throws<NotSupportedException>(() => ((IList<string>)listing.QualityMarks).Add("Mutated"));
         Assert.Throws<ArgumentException>(() => SolicitorListing.Create(
             "",
             "Alpha Law",
@@ -63,5 +65,38 @@ public sealed class SolicitorDomainConstructionTests
             Rating.Empty,
             [],
             false));
+    }
+
+    [Fact]
+    public void SearchRun_snapshots_input_lists()
+    {
+        var locations = new List<string> { "London" };
+        var listings = new List<SolicitorListing>
+        {
+            SolicitorListing.Create(
+                "key-1",
+                "Alpha Law",
+                "London",
+                ContactDetails.Empty,
+                null,
+                Rating.Empty,
+                [],
+                false)
+        };
+
+        var run = new SearchRun(
+            Guid.NewGuid(),
+            DateTimeOffset.UtcNow.AddSeconds(-1),
+            DateTimeOffset.UtcNow,
+            locations,
+            listings,
+            []);
+
+        locations.Add("Leeds");
+        listings.Clear();
+
+        Assert.Equal(["London"], run.Locations);
+        Assert.Single(run.Listings);
+        Assert.Throws<NotSupportedException>(() => ((IList<string>)run.Locations).Add("Mutated"));
     }
 }

@@ -79,11 +79,13 @@ public sealed record SolicitorListing
 
     private static IReadOnlyList<string> NormalizeQualityMarks(IReadOnlyList<string>? qualityMarks)
     {
-        return (qualityMarks ?? [])
+        var normalizedMarks = (qualityMarks ?? [])
             .Select(NormalizeOptionalText)
             .Where(mark => mark is not null)
             .Cast<string>()
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+            .ToArray();
+
+        return Array.AsReadOnly(normalizedMarks);
     }
 }

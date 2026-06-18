@@ -26,10 +26,19 @@ public sealed class SolicitorListingKeyTests
     [Fact]
     public void Create_hashes_normalized_listing_identity_when_profile_url_is_missing()
     {
-        var first = SolicitorListingKey.Create(null, "Alpha   Law", " 020 1000 ", "1 Main Street", "Leeds");
+        var first = SolicitorListingKey.Create(null, "Alpha\t\u00a0Law", " 020\n1000 ", "1 Main Street", "Leeds");
         var second = SolicitorListingKey.Create("", "alpha law", "020 1000", "1 Main Street", "leeds");
 
         Assert.Equal(first, second);
         Assert.Equal(64, first.Length);
+    }
+
+    [Fact]
+    public void Firm_key_normalizes_all_whitespace()
+    {
+        var first = SolicitorFirmKey.Create(null, "Alpha\t\u00a0Law", "London\nBridge");
+        var second = SolicitorFirmKey.Create(null, "alpha law", "london bridge");
+
+        Assert.Equal(first, second);
     }
 }

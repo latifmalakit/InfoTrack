@@ -152,10 +152,23 @@ public sealed partial class ManualSolicitorsHtmlParser(SolicitorsClientOptions o
             return null;
         }
 
-        return Uri.TryCreate(url, UriKind.Absolute, out var absolute) &&
-               (absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeHttps)
-            ? absolute.ToString()
-            : new Uri(_baseUri, url).ToString();
+        if (Uri.TryCreate(url, UriKind.Absolute, out var absolute))
+        {
+            if (absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeHttps)
+            {
+                return absolute.ToString();
+            }
+
+            if (!url.StartsWith('/'))
+            {
+                return null;
+            }
+        }
+
+        return Uri.TryCreate(_baseUri, url, out var relative) &&
+               (relative.Scheme == Uri.UriSchemeHttp || relative.Scheme == Uri.UriSchemeHttps)
+            ? relative.ToString()
+            : null;
     }
 
     private static string CleanText(string value)

@@ -11,6 +11,8 @@ public sealed class SolicitorsClientOptions
 
     public int TimeoutSeconds { get; init; } = 30;
 
+    public int MaxResponseBytes { get; init; } = 1_000_000;
+
     public Uri GetBaseAddress()
     {
         return Uri.TryCreate(BaseAddress, UriKind.Absolute, out var uri) &&
@@ -32,6 +34,11 @@ public sealed class SolicitorsClientOptions
         if (TimeoutSeconds <= 0)
         {
             throw new InvalidOperationException($"{SectionName}:{nameof(TimeoutSeconds)} must be greater than zero.");
+        }
+
+        if (MaxResponseBytes <= 0)
+        {
+            throw new InvalidOperationException($"{SectionName}:{nameof(MaxResponseBytes)} must be greater than zero.");
         }
     }
 }

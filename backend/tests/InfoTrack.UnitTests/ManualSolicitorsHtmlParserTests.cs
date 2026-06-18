@@ -76,4 +76,25 @@ public sealed class ManualSolicitorsHtmlParserTests
         Assert.Equal("(020) 7940 4000", listing.ContactDetails.PhoneNumber);
         Assert.Null(listing.Rating.ReviewCount);
     }
+
+    [Fact]
+    public void Parse_ignores_non_http_urls_from_source_html()
+    {
+        const string html = """
+        <div class="result-item">
+          <span class="h2">Safe Link Solicitors</span>
+          <a href="/safe-link-solicitors.html" class="link-map"><i></i><address>London, SE1 2QN</address></a>
+          <ul class="list-item">
+            <li><a target="_blank" href="javascript:alert(1)" rel="nofollow">Website</a></li>
+          </ul>
+        </div>
+        """;
+
+        var parser = new ManualSolicitorsHtmlParser(new SolicitorsClientOptions());
+
+        var listing = Assert.Single(parser.Parse(html, "London"));
+
+        Assert.Null(listing.ContactDetails.WebsiteUrl);
+        Assert.Equal("https://www.solicitors.com/safe-link-solicitors.html", listing.ContactDetails.ProfileUrl);
+    }
 }

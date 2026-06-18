@@ -94,8 +94,11 @@ When `ASPNETCORE_ENVIRONMENT=Development`, ASP.NET Core also loads `backend/Info
 
 - `Cors:ClientOrigins`: allowed Vue client origins. Development adds the Vite origin `http://localhost:5173`.
 - `RateLimiting`: fixed-window request limit policy.
-- `SolicitorsClient`: Solicitors.com base address, user agent, and timeout.
+- `ForwardedProxy`: trusted reverse proxy settings for `X-Forwarded-For` and `X-Forwarded-Proto`. Disabled by default; Docker Compose enables it for the frontend Nginx container.
+- `SolicitorsClient`: Solicitors.com base address, user agent, timeout, and maximum response size.
 - `SearchRunStorage:MaxStoredRuns`: number of in-memory search runs retained by the API process.
+
+For production, set `ForwardedProxy:KnownProxies` or a narrow `ForwardedProxy:KnownNetworks` value for the actual reverse proxy instead of trusting a broad private range.
 
 ## API
 

@@ -29,5 +29,7 @@ public enum SolicitorSearchUpstreamFailureReason
 {
     HttpStatus,
     Network,
-    Timeout
+    Timeout,
+    ProviderFormat,
+    ResponseTooLarge
 }

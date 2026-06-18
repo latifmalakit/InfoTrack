@@ -53,6 +53,17 @@ public sealed class InMemorySearchRunRepositoryTests
         Assert.Empty(recent);
     }
 
+    [Fact]
+    public async Task SaveAsync_honors_cancellation()
+    {
+        var repository = CreateRepository();
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            repository.SaveAsync(CreateRun(1), cancellation.Token));
+    }
+
     private static InMemorySearchRunRepository CreateRepository(int maxStoredRuns = 25)
     {
         return new InMemorySearchRunRepository(
