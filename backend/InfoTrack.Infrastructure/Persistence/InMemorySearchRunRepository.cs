@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using InfoTrack.Application.Abstractions;
 using InfoTrack.Domain.SearchRuns;
 using Microsoft.Extensions.Logging;
@@ -7,9 +6,10 @@ namespace InfoTrack.Infrastructure.Persistence;
 
 public sealed class InMemorySearchRunRepository : ISearchRunRepository
 {
-    private readonly ConcurrentDictionary<Guid, SearchRun> _runs = new();
+    private readonly Dictionary<Guid, SearchRun> _runs = [];
     private readonly ILogger<InMemorySearchRunRepository> _logger;
     private readonly int _maxStoredRuns;
+    private readonly object _syncRoot = new();
 
     public InMemorySearchRunRepository(
         SearchRunStorageOptions options,
@@ -23,43 +23,72 @@ public sealed class InMemorySearchRunRepository : ISearchRunRepository
 
     public Task SaveAsync(SearchRun run, CancellationToken cancellationToken)
     {
-        _runs[run.Id] = run;
+        int storedRunCount;
+        int removedRunCount;
+
+        lock (_syncRoot)
+        {
+            _runs[run.Id] = run;
+            removedRunCount = PruneOldRuns();
+            storedRunCount = _runs.Count;
+        }
+
         _logger.LogDebug(
             "Search run saved in memory. RunId={RunId} StoredRuns={StoredRunCount}",
             run.Id,
-            _runs.Count);
+            storedRunCount);
 
-        PruneOldRuns();
+        if (removedRunCount > 0)
+        {
+            _logger.LogDebug(
+                "Old in-memory search runs pruned. RemovedRuns={RemovedRunCount} StoredRuns={StoredRunCount}",
+                removedRunCount,
+                storedRunCount);
+        }
+
         return Task.CompletedTask;
     }
 
     public Task<SearchRun?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
-        _runs.TryGetValue(id, out var run);
+        SearchRun? run;
+        lock (_syncRoot)
+        {
+            _runs.TryGetValue(id, out run);
+        }
+
         return Task.FromResult(run);
     }
 
     public Task<SearchRun?> GetLatestCompletedBeforeAsync(DateTimeOffset timestamp, CancellationToken cancellationToken)
     {
-        var run = _runs.Values
-            .Where(candidate => candidate.CompletedAtUtc < timestamp)
-            .OrderByDescending(candidate => candidate.CompletedAtUtc)
-            .FirstOrDefault();
+        SearchRun? run;
+        lock (_syncRoot)
+        {
+            run = _runs.Values
+                .Where(candidate => candidate.CompletedAtUtc < timestamp)
+                .OrderByDescending(candidate => candidate.CompletedAtUtc)
+                .FirstOrDefault();
+        }
 
         return Task.FromResult(run);
     }
 
     public Task<IReadOnlyList<SearchRun>> GetRecentAsync(int count, CancellationToken cancellationToken)
     {
-        IReadOnlyList<SearchRun> runs = _runs.Values
-            .OrderByDescending(run => run.CompletedAtUtc)
-            .Take(Math.Max(0, count))
-            .ToList();
+        IReadOnlyList<SearchRun> runs;
+        lock (_syncRoot)
+        {
+            runs = _runs.Values
+                .OrderByDescending(run => run.CompletedAtUtc)
+                .Take(Math.Max(0, count))
+                .ToList();
+        }
 
         return Task.FromResult(runs);
     }
 
-    private void PruneOldRuns()
+    private int PruneOldRuns()
     {
         var expiredRunIds = _runs.Values
             .OrderByDescending(run => run.CompletedAtUtc)
@@ -69,15 +98,9 @@ public sealed class InMemorySearchRunRepository : ISearchRunRepository
 
         foreach (var runId in expiredRunIds)
         {
-            _runs.TryRemove(runId, out _);
+            _runs.Remove(runId);
         }
 
-        if (expiredRunIds.Count > 0)
-        {
-            _logger.LogDebug(
-                "Old in-memory search runs pruned. RemovedRuns={RemovedRunCount} StoredRuns={StoredRunCount}",
-                expiredRunIds.Count,
-                _runs.Count);
-        }
+        return expiredRunIds.Count;
     }
 }

@@ -1,6 +1,8 @@
+using InfoTrack.Api.Configuration;
 using InfoTrack.Api.Endpoints;
 using InfoTrack.Api.ErrorHandling;
 using InfoTrack.Api.Security;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace InfoTrack.Api.Extensions;
 
@@ -8,6 +10,12 @@ public static class WebApplicationExtensions
 {
     public static WebApplication UseInfoTrackApi(this WebApplication app)
     {
+        var forwardedProxyOptions = app.Services.GetRequiredService<ForwardedProxyOptions>();
+        if (forwardedProxyOptions.Enabled)
+        {
+            app.UseForwardedHeaders();
+        }
+
         app.UseMiddleware<ApiExceptionHandlingMiddleware>();
         app.UseSecurityHeaders();
         app.UseSwagger();

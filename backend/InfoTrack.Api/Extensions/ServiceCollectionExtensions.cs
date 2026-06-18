@@ -7,6 +7,7 @@ using InfoTrack.Application.SearchRuns.History;
 using InfoTrack.Application.SearchRuns.Reports;
 using InfoTrack.Infrastructure.Persistence;
 using InfoTrack.Infrastructure.Solicitors;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
 
 namespace InfoTrack.Api.Extensions;
@@ -24,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddSwagger();
         services.AddProblemDetails();
         services.AddClientCors(options.Cors);
+        services.AddForwardedProxy(options.ForwardedProxy);
         services.AddApiRateLimiting(options.RateLimiting);
         services.AddSearchApplication();
         services.AddInfrastructure(options);
@@ -56,6 +58,32 @@ public static class ServiceCollectionExtensions
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });
+        });
+    }
+
+    private static void AddForwardedProxy(this IServiceCollection services, ForwardedProxyOptions proxyOptions)
+    {
+        services.AddSingleton(proxyOptions);
+
+        if (!proxyOptions.Enabled)
+        {
+            return;
+        }
+
+        services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+            foreach (var knownNetwork in proxyOptions.KnownNetworks)
+            {
+                var (prefix, prefixLength) = ForwardedProxyOptions.ParseNetwork(knownNetwork);
+                options.KnownIPNetworks.Add(new System.Net.IPNetwork(prefix, prefixLength));
+            }
+
+            foreach (var knownProxy in proxyOptions.KnownProxies)
+            {
+                options.KnownProxies.Add(System.Net.IPAddress.Parse(knownProxy));
+            }
         });
     }
 
